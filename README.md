@@ -13,6 +13,13 @@ Snake Academy is a native iOS/iPadOS SwiftUI and SpriteKit game with three playa
 3. Choose an iPhone or iPad simulator running iOS/iPadOS 17.0 or newer, or connect a physical iPhone or iPad.
 4. Press Run.
 
+## Open in Swift Playgrounds
+
+1. Open `SnakeAcademy.swiftpm` in Swift Playgrounds on iPad or Mac.
+2. Press Run.
+
+The `.swiftpm` package is included for Swift Playgrounds. The `.xcodeproj` remains available for Xcode.
+
 ## Controls
 
 - Swipe up, down, left, or right on the board to steer.
