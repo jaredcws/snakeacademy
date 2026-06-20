@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "dev": "python3 -m http.server 4173",
+    "build": "node scripts/build.js",
+    "test": "node --test"
+  },
+  "devDependencies": {},
+  "type": "module"
+}
