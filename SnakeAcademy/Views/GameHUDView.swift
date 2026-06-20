@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct GameHUDView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let snapshot: GameSnapshot
     var onPause: () -> Void
     var onResume: () -> Void
@@ -8,44 +10,96 @@ struct GameHUDView: View {
     var onBack: () -> Void
     var onClearWord: () -> Void
 
+    private var isCompact: Bool {
+        horizontalSizeClass == .compact
+    }
+
+    private var compactColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 96), spacing: 8)]
+    }
+
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 14) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(snapshot.mode.title)
-                        .font(.title2.weight(.black))
-                    Text(snapshot.difficulty.title)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                hudMetric("Score", "\(snapshot.hud.score)")
-                hudMetric("High", "\(snapshot.hud.highScore)")
-                hudMetric("Length", "\(snapshot.hud.snakeLength)")
-
-                Button(snapshot.status == .paused ? "Resume" : "Pause") {
-                    if snapshot.status == .paused {
-                        onResume()
-                    } else {
-                        onPause()
-                    }
-                }
-                .buttonStyle(HUDButtonStyle())
-
-                Button("Restart", action: onRestart)
-                    .buttonStyle(HUDButtonStyle())
-
-                Button("Menu", action: onBack)
-                    .buttonStyle(HUDButtonStyle())
+        VStack(alignment: .leading, spacing: isCompact ? 10 : 14) {
+            if isCompact {
+                compactHeader
+            } else {
+                regularHeader
             }
 
             modeSpecificHUD
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        .padding(.horizontal, isCompact ? 12 : 24)
+        .padding(.vertical, isCompact ? 10 : 16)
         .background(.regularMaterial)
+    }
+
+    private var regularHeader: some View {
+        HStack(spacing: 14) {
+            titleBlock
+
+            Spacer()
+
+            hudMetric("Score", "\(snapshot.hud.score)")
+            hudMetric("High", "\(snapshot.hud.highScore)")
+            hudMetric("Length", "\(snapshot.hud.snakeLength)")
+
+            Button(pauseButtonTitle, action: pauseOrResume)
+                .buttonStyle(HUDButtonStyle())
+
+            Button("Restart", action: onRestart)
+                .buttonStyle(HUDButtonStyle())
+
+            Button("Menu", action: onBack)
+                .buttonStyle(HUDButtonStyle())
+        }
+    }
+
+    private var compactHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                titleBlock
+                Spacer()
+                Button("Menu", action: onBack)
+                    .buttonStyle(HUDButtonStyle())
+            }
+
+            LazyVGrid(columns: compactColumns, alignment: .leading, spacing: 8) {
+                hudMetric("Score", "\(snapshot.hud.score)")
+                hudMetric("High", "\(snapshot.hud.highScore)")
+                hudMetric("Length", "\(snapshot.hud.snakeLength)")
+            }
+
+            HStack(spacing: 8) {
+                Button(pauseButtonTitle, action: pauseOrResume)
+                    .buttonStyle(HUDButtonStyle())
+                Button("Restart", action: onRestart)
+                    .buttonStyle(HUDButtonStyle())
+            }
+        }
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(snapshot.mode.title)
+                .font((isCompact ? Font.headline : Font.title2).weight(.black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            Text(snapshot.difficulty.title)
+                .font((isCompact ? Font.caption : Font.subheadline).weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var pauseButtonTitle: String {
+        snapshot.status == .paused ? "Resume" : "Pause"
+    }
+
+    private func pauseOrResume() {
+        if snapshot.status == .paused {
+            onResume()
+        } else {
+            onPause()
+        }
     }
 
     @ViewBuilder
@@ -54,18 +108,36 @@ struct GameHUDView: View {
         case .classic:
             EmptyView()
         case .word:
-            HStack(spacing: 14) {
-                hudMetric("Current Word", snapshot.hud.currentWord.isEmpty ? "-" : snapshot.hud.currentWord)
-                hudMetric("Last Word", snapshot.hud.lastCompletedWord.isEmpty ? "-" : snapshot.hud.lastCompletedWord)
-                hudMetric("Best Word", snapshot.hud.bestWord.isEmpty ? "-" : snapshot.hud.bestWord)
-                Button("Clear Word", action: onClearWord)
-                    .buttonStyle(HUDButtonStyle())
+            if isCompact {
+                LazyVGrid(columns: compactColumns, alignment: .leading, spacing: 8) {
+                    hudMetric("Current Word", snapshot.hud.currentWord.isEmpty ? "-" : snapshot.hud.currentWord)
+                    hudMetric("Last Word", snapshot.hud.lastCompletedWord.isEmpty ? "-" : snapshot.hud.lastCompletedWord)
+                    hudMetric("Best Word", snapshot.hud.bestWord.isEmpty ? "-" : snapshot.hud.bestWord)
+                    Button("Clear Word", action: onClearWord)
+                        .buttonStyle(HUDButtonStyle())
+                }
+            } else {
+                HStack(spacing: 14) {
+                    hudMetric("Current Word", snapshot.hud.currentWord.isEmpty ? "-" : snapshot.hud.currentWord)
+                    hudMetric("Last Word", snapshot.hud.lastCompletedWord.isEmpty ? "-" : snapshot.hud.lastCompletedWord)
+                    hudMetric("Best Word", snapshot.hud.bestWord.isEmpty ? "-" : snapshot.hud.bestWord)
+                    Button("Clear Word", action: onClearWord)
+                        .buttonStyle(HUDButtonStyle())
+                }
             }
         case .math:
-            HStack(spacing: 14) {
-                hudMetric("Problem", snapshot.hud.mathProblemText)
-                hudMetric("Mode", snapshot.hud.mathModeTitle)
-                hudMetric("Streak", "\(snapshot.hud.mathStreak)")
+            if isCompact {
+                LazyVGrid(columns: compactColumns, alignment: .leading, spacing: 8) {
+                    hudMetric("Problem", snapshot.hud.mathProblemText)
+                    hudMetric("Mode", snapshot.hud.mathModeTitle)
+                    hudMetric("Streak", "\(snapshot.hud.mathStreak)")
+                }
+            } else {
+                HStack(spacing: 14) {
+                    hudMetric("Problem", snapshot.hud.mathProblemText)
+                    hudMetric("Mode", snapshot.hud.mathModeTitle)
+                    hudMetric("Streak", "\(snapshot.hud.mathStreak)")
+                }
             }
         }
     }
@@ -76,12 +148,13 @@ struct GameHUDView: View {
                 .font(.caption2.weight(.black))
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(.headline.weight(.black))
+                .font((isCompact ? Font.subheadline : Font.headline).weight(.black))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.65)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, isCompact ? 10 : 12)
+        .padding(.vertical, isCompact ? 7 : 8)
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
     }
 }
@@ -89,10 +162,12 @@ struct GameHUDView: View {
 private struct HUDButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline.weight(.bold))
+            .font(.subheadline.weight(.bold))
             .foregroundStyle(.primary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
             .background(Color.primary.opacity(configuration.isPressed ? 0.16 : 0.08), in: RoundedRectangle(cornerRadius: 10))
     }
 }
